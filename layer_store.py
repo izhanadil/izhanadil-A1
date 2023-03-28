@@ -1,8 +1,10 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
 from layer_util import Layer
+from layer_util import get_layers
 from data_structures.queue_adt import CircularQueue
-from data_structures import queue_adt, array_sorted_list, stack_adt
+from data_structures import queue_adt, stack_adt
+from data_structures.array_sorted_list import ArraySortedList, ListItem
 
 class LayerStore(ABC):
 
@@ -48,6 +50,7 @@ class SetLayerStore(LayerStore):
     """
 
     def __init__(self) -> None:
+        # Initialize the array_sorted and inverts to None
         self.array_sorted = None
         self.inverts = None
 
@@ -56,6 +59,7 @@ class SetLayerStore(LayerStore):
         Add a layer to the store.
         Returns true if the LayerStore was actually changed.
         """
+        # Set the current layer to the array_sorted and return True indicating the change was made.
         self.array_sorted = layer
         return True
 
@@ -63,12 +67,17 @@ class SetLayerStore(LayerStore):
         """
         Returns the colour this square should show, given the current layers.
         """
+        # If array_sorted is not None, apply the layer on the specified start, timestamp, x and y 
+        # to get the color and store it in 'color' variable
         if self.array_sorted is not None:
             color = self.array_sorted.apply(start, timestamp, x, y)
+            
+            # If inverts is True, invert the color output
             if self.inverts:
                 color = (255 - color[0], 255 - color[1], 255 - color[2])
             return color
         else:
+            # If array_sorted is None, return start (default color)
             return start  
 
     def erase(self, layer: Layer) -> bool:
@@ -76,6 +85,7 @@ class SetLayerStore(LayerStore):
         Complete the erase action with this layer
         Returns true if the LayerStore was actually changed.
         """
+        # Set the array_sorted to None indicating the layer has been removed and return True indicating change was made.
         self.array_sorted = None
         return True
 
@@ -83,7 +93,9 @@ class SetLayerStore(LayerStore):
         """
         Special mode. Different for each store implementation.
         """
+        # Invert the color output by toggling the inverts flag.
         self.inverts = not self.inverts
+
 
 class AdditiveLayerStore(LayerStore):
     """
@@ -94,7 +106,9 @@ class AdditiveLayerStore(LayerStore):
     """
 
     def __init__(self) -> None:
+        # Initialize a new circular queue for layers with a maximum capacity of 2000
         self.layers = CircularQueue(2000)
+        # Initialize a new temporary circular queue for processing
         self.temp_queue = CircularQueue(2000)
 
     def add(self, layer: Layer) -> bool:
@@ -102,22 +116,31 @@ class AdditiveLayerStore(LayerStore):
         Add a layer to the store.
         Returns true if the LayerStore was actually changed.
         """
+        # Append the new layer to the end of the layers queue
         self.layers.append(layer)
+        # Return True as the LayerStore was changed
         return True
 
     def get_color(self, start, timestamp, x, y) -> tuple[int, int, int]:
         """
         Returns the colour this square should show, given the current layers.
         """
+        # Set color to the starting color
         color = start
 
-       
-
+        # Iterate through all the layers
         for me in range(self.layers.length):
+            # Dequeue the first layer
             first = self.layers.serve()
+            # Apply the layer to the current color
             color = first.apply(color, timestamp, x, y)
-            self.add(first)
+            # Enqueue the layer to the temporary queue
+            self.temp_queue.append(first)
 
+        # Swap the layers queue with the temporary queue
+        self.layers, self.temp_queue = self.temp_queue, self.layers
+
+        # Return the final color
         return color
 
     
@@ -126,7 +149,9 @@ class AdditiveLayerStore(LayerStore):
         Complete the erase action with this layer
         Returns true if the LayerStore was actually changed.
         """
+        # Dequeue the first layer
         self.layers.serve()
+        # Return True as the LayerStore was changed
         return True
 
     
@@ -134,17 +159,26 @@ class AdditiveLayerStore(LayerStore):
         """
         Special mode. Different for each store implementation.
         """
+        # Create a new stack with a maximum capacity of 2000
         STACK = stack_adt.ArrayStack(2000)
 
+        # Iterate through all the layers
         for ind in range(len(self.layers)):
+            # Dequeue the current layer
             qlayer = self.layers.serve()
+            # Push the layer to the stack
             STACK.push(qlayer)
 
+        # Iterate through all the layers
         for Ind in range(STACK.length):
+            # Pop the top layer from the stack
             layer = STACK.pop()
+            # Enqueue the layer to the layers queue
             self.layers.append(layer)
 
+        # Return the updated layers queue
         return self.layers
+
     
 class SequenceLayerStore(LayerStore):
     """
@@ -156,50 +190,91 @@ class SequenceLayerStore(LayerStore):
         In the event of two layers being the median names, pick the lexicographically smaller one.
     """
 
-    def __init__(self):
-        pass
-        # super().__init__()
-        # self.layers = {}
-        # self.index = 0
+    def __init__(self) -> None:
+        # Initialize an ArraySortedList to store the layers.
+        self.array_sorted_list = ArraySortedList(len(get_layers())*100)
 
-    def add(self, layer: Layer):
-        pass
-        # layer.index = self.index
-        # self.layers[layer.name] = layer
-        # self.index += 1
+        # Add a ListItem for each layer with a value of False (layer is not applied).
+        for element in range(0, len(get_layers())):
+            if get_layers()[element] == None:
+                break
+            else:
+                item_list = ListItem(False, element)
+                self.array_sorted_list.add(item_list)
 
-    def erase(self, layer_name: str):
-        pass
-        # if layer_name in self.layers:
-        #     del self.layers[layer_name]
+    def add(self, layer: Layer) -> bool:
+        """
+        Add element layer to the store.
+        Returns true if the LayerStore was actually changed.
+        """
+        # Remove the current ListItem for the layer's index.
+        self.array_sorted_list.delete_at_index(layer.index)
 
-    def get_layers(self):
-    #  -> List[Layer]:
-        pass
-        #return list(self.layers.values())
+        # Create a new ListItem for the layer with a value of True (layer is applied).
+        item_list = ListItem(True, layer.index)
 
-    def apply_layers(self, grid: Grid) -> None:
-        pass
-        # color_counts = defaultdict(lambda: [0, 0, 0])
-        # for layer in sorted(self.layers.values(), key=attrgetter('index')):
-        #     if layer.applying:
-        #         for x in range(grid.width):
-        #             for y in range(grid.height):
-        #                 if grid.is_within_bounds(x, y):
-        #                     color_counts[(x, y)] = [
-        #                         color_counts[(x, y)][i] + layer.color[i]
-        #                         for i in range(3)
-        #                     ]
-        # for (x, y), color_sum in color_counts.items():
-        #     color = [min(int(c), 255) for c in color_sum]
-        #     grid[x][y].set_color(color)
+        # Add the new ListItem to the ArraySortedList.
+        self.array_sorted_list.add(item_list)
+
+        return True
+
+    def get_color(self, start, timestamp, x, y) -> tuple[int, int, int]:
+        """
+        Returns the color this square should show, given the current layers.
+
+        start = RGB
+        """
+        # Set the color to the starting RGB value.
+        color = start
+
+        # Iterate through each layer in the ArraySortedList.
+        for x in range(len(self.array_sorted_list)):
+            layer = self.array_sorted_list[x]
+
+            # If the layer is applied, apply it to the color.
+            if layer.value:
+                color = get_layers()[layer.key].apply(color, timestamp, x, y)
+
+        return color
+
+    def erase(self, layer: Layer) -> bool:
+        """
+        Complete the erase action with this layer
+        Returns true if the LayerStore was actually changed.
+        """
+        # Create a new ListItem for the layer with a value of False (layer is not applied).
+        item_list = ListItem(False, layer.index)
+
+        # Remove the current ListItem for the layer.
+        self.array_sorted_list.delete_at_index(item_list.key)
+
+        return True
 
     def special(self):
-        pass
-        # num_applying = sum(layer.applying for layer in self.layers.values())
-        # if num_applying % 2 == 0:
-        #     median_name = sorted(self.layers.keys())[num_applying // 2 - 1]
-        # else:
-        #     median_name = sorted(self.layers.keys())[num_applying // 2]
-        # self.layers[median_name].applying = False
+        """
+        Special mode. Different for each store implementation.
+        """
 
+        # Create a new ArraySortedList to store the layers in lexicographically sorted order.
+        lexi_sorted_layers = ArraySortedList(len(get_layers()) * 100)
+
+        # Iterate through each layer in the ArraySortedList.
+        for index in range(self.array_sorted_list.length):
+            cur_layer = self.array_sorted_list[index]
+
+            # If the layer is applied, add a new ListItem to lexi_sorted_layers with the layer's name.
+            if cur_layer.value:
+               layer_replace = ListItem(cur_layer.key, get_layers()[cur_layer.key].name)
+               lexi_sorted_layers.add(layer_replace)
+
+        # Determine the index of the median layer in lexi_sorted_layers.
+        if lexi_sorted_layers.length % 2 == 1:
+            median_index = (lexi_sorted_layers.length + 1) // 2
+        else:
+            median_index = lexi_sorted_layers.length // 2
+
+        
+
+
+        self.array_sorted_list.delete_at_index(
+        get_layers()[lexi_sorted_layers.delete_at_index(median_index - 1).value].index)
