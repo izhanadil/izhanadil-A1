@@ -27,23 +27,19 @@ class Grid:
 
         Should also intialise the brush size to the DEFAULT provided as a class variable.
         """
-        # Check if the draw_style is valid
-        #if draw_style in Grid.DRAW_STYLE_OPTIONS:
-        #    self.draw_style = draw_style
-        #else:
-         #   raise ValueError("Invalid") # If draw_style is not valid, raise ValueError
+
         
-        self.x = x # The x dimension of the grid
-        self.y = y # The y dimension of the grid
+        self.x = x # The x dimension of the grid #O(1)
+        self.y = y # The y dimension of the grid #O(1)
 
         # Creating a 2D array with dimensions x and y and assigning a SetLayerStore object to each element of the grid
-        self.grid = ArrayR(self.x)
-        for i in range (self.x):
-            self.grid[i] = ArrayR(self.y)
-            for k in range (self.y):
-                self.grid[i][k] = SetLayerStore() 
+        self.grid = ArrayR(self.x)  #O(x)
+        for i in range (self.x):  #O(x)
+            self.grid[i] = ArrayR(self.y)  #O(y)
+            for k in range (self.y):  #O(y)
+                self.grid[i][k] = SetLayerStore() #O(1) 
 
-        self.brush_size = self.DEFAULT_BRUSH_SIZE # Assigning the default brush size to the brush_size variable
+        self.brush_size = self.DEFAULT_BRUSH_SIZE # Assigning the default brush size to the brush_size variable  #O(1)
 
     def increase_brush_size(self):
             """
@@ -61,8 +57,8 @@ class Grid:
             - Best Case: O(1) - when the brush_size is already equal to MAX_BRUSH.
             - Worst Case: O(1) - when the brush_size is not already equal to MAX_BRUSH.
             """
-            if self.brush_size != Grid.MAX_BRUSH: # Check if brush_size is not already equal to MAX_BRUSH
-                self.brush_size = self.brush_size + 1 # Increase the brush size by 1
+            if self.brush_size != Grid.MAX_BRUSH: # Check if brush_size is not already equal to MAX_BRUSH   #O(1)
+                self.brush_size = self.brush_size + 1 # Increase the brush size by 1    #O(1)
             # O(1) - Constant Time
 
     def decrease_brush_size(self):
@@ -76,8 +72,8 @@ class Grid:
 
         Worst case complexity: O(1) - the function only performs a single comparison and a single arithmetic operation.
         """
-        if self.brush_size != Grid.MIN_BRUSH: # Check if brush_size is not already equal to MIN_BRUSH
-            self.brush_size = self.brush_size - 1 # Decrease the brush size by 1
+        if self.brush_size != Grid.MIN_BRUSH: # Check if brush_size is not already equal to MIN_BRUSH    #O(1)
+            self.brush_size = self.brush_size - 1 # Decrease the brush size by 1   #O(1)
 
     def special(self):
         """
@@ -95,16 +91,16 @@ class Grid:
         number of items stored, and if the grid has x * y squares that need to be processed.
         """
         # Loop through all the elements of the grid and activate the special effect
-        for row in self.grid:
-            for square in row:
-                square.special()
+        for row in self.grid:   #O(x)
+            for square in row:  #O(y)
+                square.special()  #O(f(n))
 
 
     def __getitem__(self, index):
         """
         Overriding the __getitem__ method to allow direct indexing of the grid.
         """
-        return self.grid[index] # Return the element of the grid at the given index
+        return self.grid[index] # Return the element of the grid at the given index    #O(1)
     
     def manhattan_distance(self, layer, x, y):
         """
@@ -122,16 +118,16 @@ class Grid:
         """
 
         # Set brush size to grid's current brush size
-        brush = self.brush_size
+        brush = self.brush_size   #O(1)
         # Loop through cells surrounding the target cell
         for i in range(x-brush, x+brush+1):
             for j in range(y-brush, y+brush+1):
                 # Check if the cell is within the brush range
-                if abs(x - i) + abs(y - j) <= brush:
+                if abs(x - i) + abs(y - j) <= brush:   #O(1)
                     # Check if the cell is within the grid boundaries
-                    if (0 <= i < self.x) and (0 <= j < self.y):
+                    if (0 <= i < self.x) and (0 <= j < self.y):   #O(1)
                         # Add the layer to the cell's layer store
-                        self.grid[i][j].add(layer)
+                        self.grid[i][j].add(layer)   #O(1)
 
 if __name__ == '__main__':
     grid = Grid(Grid.DRAW_STYLE_SET, 5, 5)

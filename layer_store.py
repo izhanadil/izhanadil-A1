@@ -94,16 +94,16 @@ class SetLayerStore(LayerStore):
             """
         # If array_sorted is not None, apply the layer on the specified start, timestamp, x and y 
         # to get the color and store it in 'color' variable
-        if self.array_sorted is not None:
-            color = self.array_sorted.apply(start, timestamp, x, y)
+        if self.array_sorted is not None:   #O(1)
+            color = self.array_sorted.apply(start, timestamp, x, y)  #O(L)
             
             # If inverts is True, invert the color output
-            if self.inverts:
-                color = (255 - color[0], 255 - color[1], 255 - color[2])
-            return color
+            if self.inverts:   #O(!)
+                color = (255 - color[0], 255 - color[1], 255 - color[2])   #O(1)
+            return color   #O(1)
         else:
             # If array_sorted is None, return start (default color)
-            return start  
+            return start   #O(1)
 
     def erase(self, layer: Layer) -> bool:
         """
@@ -124,8 +124,8 @@ class SetLayerStore(LayerStore):
                 setting the value of `array_sorted` to None, which is an O(1) operation.
         """
         # Set the array_sorted to None indicating the layer has been removed and return True indicating change was made.
-        self.array_sorted = None
-        return True
+        self.array_sorted = None   #O(1)
+        return True   #O(1)
 
     def special(self):
         """
@@ -133,7 +133,7 @@ class SetLayerStore(LayerStore):
         This function has a constant time complexity of O(1), as it only performs a single operation regardless of the size of the input.
         """
         # Invert the color output by toggling the inverts flag.
-        self.inverts = not self.inverts
+        self.inverts = not self.inverts  #O(1)
 
 
 class AdditiveLayerStore(LayerStore):
@@ -166,7 +166,7 @@ class AdditiveLayerStore(LayerStore):
             Time: O(1) - appending an item to a circular queue takes constant time.
         """
         # Append the new layer to the end of the layers queue
-        self.layers.append(layer)
+        self.layers.append(layer)  #O(1)
         # Return True as the LayerStore was changed
         return True
 
@@ -190,19 +190,19 @@ class AdditiveLayerStore(LayerStore):
         color = start
 
         # Iterate through all the layers
-        for me in range(self.layers.length):
+        for me in range(self.layers.length):   #O(N)
             # Dequeue the first layer
-            first = self.layers.serve()
+            first = self.layers.serve()   #O(1)
             # Apply the layer to the current color
-            color = first.apply(color, timestamp, x, y)
+            color = first.apply(color, timestamp, x, y)   #O(1)
             # Enqueue the layer to the temporary queue
-            self.temp_queue.append(first)
+            self.temp_queue.append(first)   #O(1)
 
         # Swap the layers queue with the temporary queue
-        self.layers, self.temp_queue = self.temp_queue, self.layers
+        self.layers, self.temp_queue = self.temp_queue, self.layers  #O(1)
 
         # Return the final color
-        return color
+        return color  #O(1)
 
     
     def erase(self, layer: Layer) -> bool:
@@ -240,19 +240,19 @@ class AdditiveLayerStore(LayerStore):
         # Iterate through all the layers
         for ind in range(len(self.layers)):
             # Dequeue the current layer
-            qlayer = self.layers.serve()
+            qlayer = self.layers.serve()   #O(n)
             # Push the layer to the stack
-            STACK.push(qlayer)
+            STACK.push(qlayer)   #O(1)
 
         # Iterate through all the layers
         for Ind in range(STACK.length):
             # Pop the top layer from the stack
-            layer = STACK.pop()
+            layer = STACK.pop()   #O(1)
             # Enqueue the layer to the layers queue
-            self.layers.append(layer)
+            self.layers.append(layer)   #O(1)
 
         # Return the updated layers queue
-        return self.layers
+        return self.layers   #O(1)
 
     
 class SequenceLayerStore(LayerStore):
@@ -285,15 +285,15 @@ class SequenceLayerStore(LayerStore):
     
          """
         # Initialize an ArraySortedList to store the layers.
-        self.array_sorted_list = ArraySortedList(len(get_layers())*100)
+        self.array_sorted_list = ArraySortedList(len(get_layers())*100)   #O(1)
 
         # Add a ListItem for each layer with a value of False (layer is not applied).
-        for element in range(0, len(get_layers())):
-            if get_layers()[element] == None:
+        for element in range(0, len(get_layers())):   #O(n)
+            if get_layers()[element] == None:   #O(1)
                 break
             else:
-                item_list = ListItem(False, element)
-                self.array_sorted_list.add(item_list)
+                item_list = ListItem(False, element)    #O(1)
+                self.array_sorted_list.add(item_list)   #O(log n)
 
     def add(self, layer: Layer) -> bool:
         """
@@ -312,15 +312,15 @@ class SequenceLayerStore(LayerStore):
         the binary search will have to go through all n elements in the list before inserting the new item at the end.
         """
         # Remove the current ListItem for the layer's index.
-        self.array_sorted_list.delete_at_index(layer.index)
+        self.array_sorted_list.delete_at_index(layer.index)   #O(log n)
 
         # Create a new ListItem for the layer with a value of True (layer is applied).
-        item_list = ListItem(True, layer.index)
+        item_list = ListItem(True, layer.index)     #O(1)
 
         # Add the new ListItem to the ArraySortedList.
-        self.array_sorted_list.add(item_list)
+        self.array_sorted_list.add(item_list)   #O(log n)
 
-        return True
+        return True #O(1)
 
     def get_color(self, start, timestamp, x, y) -> tuple[int, int, int]:
         """
@@ -342,13 +342,13 @@ class SequenceLayerStore(LayerStore):
         - Best case time complexity: O(1) if there are no layers applied.
         """
         # Set the color to the starting RGB value.
-        color = start
+        color = start  #O(1)
 
         # Iterate through each layer in the ArraySortedList.
-        for x in range(len(self.array_sorted_list)):
-            layer = self.array_sorted_list[x]
+        for x in range(len(self.array_sorted_list)):   #O(n)
+            layer = self.array_sorted_list[x]   
 
-            # If the layer is applied, apply it to the color.
+            # If the layer is applied, apply it to the color.  #O(1)
             if layer.value:
                 color = get_layers()[layer.key].apply(color, timestamp, x, y)
 
@@ -368,12 +368,13 @@ class SequenceLayerStore(LayerStore):
         Worst case: O(N) if the layer to be erased is at the end of the ArraySortedList, where N is the number of layers in the LayerStore.
         """
         # Create a new ListItem for the layer with a value of False (layer is not applied).
+        #O(1)
         item_list = ListItem(False, layer.index)
 
         # Remove the current ListItem for the layer.
         self.array_sorted_list.delete_at_index(item_list.key)
 
-        return True
+        return True  #O(1)
 
     def special(self):
         """
@@ -388,22 +389,22 @@ class SequenceLayerStore(LayerStore):
         """
 
         # Create a new ArraySortedList to store the layers in lexicographically sorted order.
-        lexi_sorted_layers = ArraySortedList(len(get_layers()) * 100)
+        lexi_sorted_layers = ArraySortedList(len(get_layers()) * 100)   #O(1)
 
         # Iterate through each layer in the ArraySortedList.
-        for index in range(self.array_sorted_list.length):
-            cur_layer = self.array_sorted_list[index]
+        for index in range(self.array_sorted_list.length):  #O(n)
+            cur_layer = self.array_sorted_list[index]   #O(1)
 
             # If the layer is applied, add a new ListItem to lexi_sorted_layers with the layer's name.
             if cur_layer.value:
-               layer_replace = ListItem(cur_layer.key, get_layers()[cur_layer.key].name)
-               lexi_sorted_layers.add(layer_replace)
+               layer_replace = ListItem(cur_layer.key, get_layers()[cur_layer.key].name)    #O(1)
+               lexi_sorted_layers.add(layer_replace)    #O(n)
 
         # Determine the index of the median layer in lexi_sorted_layers.
-        if lexi_sorted_layers.length % 2 == 1:
-            median_index = (lexi_sorted_layers.length + 1) // 2
+        if lexi_sorted_layers.length % 2 == 1:   #O(1)
+            median_index = (lexi_sorted_layers.length + 1) // 2   #O(1)
         else:
-            median_index = lexi_sorted_layers.length // 2
+            median_index = lexi_sorted_layers.length // 2   #O(1)
 
         
 
