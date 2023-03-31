@@ -104,11 +104,23 @@ class ReplayTracker:
 
     def add_action(self, action: PaintAction, is_undo: bool = False) -> None:
         """
-        Adds an action to the replay.
+        Add a PaintAction object to the replay, and also add it to the undo tracker.
+        
+        Args:
+        - action: a PaintAction object to add to the replay and undo tracker
+        - is_undo: a boolean value indicating whether the action is an undo action or not
 
-        `is_undo` specifies whether the action was an undo action or not.
-        Special, Redo, and Draw all have this is False.
+        Returns:
+        - None
+        
+
+        Complexity:
+        - Best case: O(1) if is_undo is False and adding the action to the replay queue is the only operation
+        - Worst case: O(1) if is_undo is True and adding the action to the new replay tracker and the 
+                      replay queue are the only operations
+                     
         """
+
         if not is_undo:
             self.replay_queue.append(action)  # Add the action to the replay queue
             self.undo_tracker.add_action(action)  # Add the action to the undo tracker
@@ -121,9 +133,19 @@ class ReplayTracker:
     def play_next_action(self, grid: Grid) -> bool:
         """
         Plays the next replay action on the grid.
-        Returns a boolean.
+
+        Args:
+        - grid: A Grid object on which the replay actions will be played.
+
+        Returns:
+        - bool: A boolean value indicating whether there were more actions to play or not.
             - If there were no more actions to play, and so nothing happened, return True.
             - Otherwise, return False.
+
+        Complexity:
+        - Worst case: O(n), where n is the number of replay actions in the queue.
+            - This is because in the worst case, all replay actions need to be played.
+        - Best case: O(1), when the replay queue is empty.
         """
         if self.replay_queue.is_empty():  # If the replay queue is empty, return True
             return True

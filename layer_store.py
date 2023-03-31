@@ -51,6 +51,7 @@ class SetLayerStore(LayerStore):
 
     def __init__(self) -> None:
         # Initialize the array_sorted and inverts to None
+        # time complexity O(1)
         self.array_sorted = None
         self.inverts = None
 
@@ -58,6 +59,18 @@ class SetLayerStore(LayerStore):
         """
         Add a layer to the store.
         Returns true if the LayerStore was actually changed.
+        
+        Args:
+        - layer: An instance of the Layer class to be added.
+
+        Returns:
+        - bool: A boolean value indicating whether the LayerStore was actually changed.
+        
+        Description:
+        This method adds a single layer to the SetLayerStore instance. It sets the current layer to the layer 
+        parameter and returns True indicating that the change was made. 
+        The best case time complexity of this method is O(1) as it only needs to set the layer and return True.
+        The worst case time complexity is also O(1) because the operation does not depend on the size of the input.
         """
         # Set the current layer to the array_sorted and return True indicating the change was made.
         self.array_sorted = layer
@@ -66,7 +79,19 @@ class SetLayerStore(LayerStore):
     def get_color(self, start, timestamp, x, y) -> tuple[int, int, int]:
         """
         Returns the colour this square should show, given the current layers.
-        """
+         Arguments:
+        - start: A tuple of integers representing the RGB value of the starting color.
+        - timestamp: An integer representing the current timestamp.
+        - x: An integer representing the x-coordinate of the square.
+        - y: An integer representing the y-coordinate of the square.
+
+        Returns:
+        A tuple of integers representing the RGB value of the final color.
+
+        
+        Best case: O(1) if self.array_sorted is None.
+        Worst case: O(L) where L is the complexity of applying the layer self.array_sorted on the given input.
+            """
         # If array_sorted is not None, apply the layer on the specified start, timestamp, x and y 
         # to get the color and store it in 'color' variable
         if self.array_sorted is not None:
@@ -84,6 +109,19 @@ class SetLayerStore(LayerStore):
         """
         Complete the erase action with this layer
         Returns true if the LayerStore was actually changed.
+        Args:
+        layer (Layer): The layer to be removed.
+        
+        Returns:
+            bool: True if the LayerStore was actually changed.
+            
+        Complexity:
+            Best case: O(1)
+                When the layer is removed successfully, it only requires setting the value of 
+                `array_sorted` to None, which is an O(1) operation.
+            Worst case: O(1)
+                Similarly, when the layer is not present in the LayerStore, it still only requires 
+                setting the value of `array_sorted` to None, which is an O(1) operation.
         """
         # Set the array_sorted to None indicating the layer has been removed and return True indicating change was made.
         self.array_sorted = None
@@ -92,6 +130,7 @@ class SetLayerStore(LayerStore):
     def special(self):
         """
         Special mode. Different for each store implementation.
+        This function has a constant time complexity of O(1), as it only performs a single operation regardless of the size of the input.
         """
         # Invert the color output by toggling the inverts flag.
         self.inverts = not self.inverts
@@ -106,6 +145,8 @@ class AdditiveLayerStore(LayerStore):
     """
 
     def __init__(self) -> None:
+        #Complexity:
+        #O(1), as this method simply initializes the two queues with a maximum capacity of 2000.
         # Initialize a new circular queue for layers with a maximum capacity of 2000
         self.layers = CircularQueue(2000)
         # Initialize a new temporary circular queue for processing
@@ -115,6 +156,14 @@ class AdditiveLayerStore(LayerStore):
         """
         Add a layer to the store.
         Returns true if the LayerStore was actually changed.
+         Args:
+            layer: An instance of the Layer class to add to the store.
+        
+        Returns:
+            A boolean value indicating whether the LayerStore was actually changed.
+            
+        Complexity:
+            Time: O(1) - appending an item to a circular queue takes constant time.
         """
         # Append the new layer to the end of the layers queue
         self.layers.append(layer)
@@ -124,6 +173,18 @@ class AdditiveLayerStore(LayerStore):
     def get_color(self, start, timestamp, x, y) -> tuple[int, int, int]:
         """
         Returns the colour this square should show, given the current layers.
+        Args:
+        - start: tuple of 3 integers representing the starting RGB color of the square
+        - timestamp: integer representing the timestamp of the query
+        - x: integer representing the x coordinate of the square
+        - y: integer representing the y coordinate of the square
+    
+        Returns:
+        - A tuple of 3 integers representing the final RGB color of the square after applying all layers
+        
+        Time Complexity:
+        - Best case: O(1) when there are no layers in the store or when the first layer changes the color of the square to the final color
+        - Worst case: O(N) where N is the number of layers in the store. This happens when all the layers change the color of the square
         """
         # Set color to the starting color
         color = start
@@ -148,6 +209,17 @@ class AdditiveLayerStore(LayerStore):
         """
         Complete the erase action with this layer
         Returns true if the LayerStore was actually changed.
+        Args:
+            layer (Layer): The layer to be removed from the store.
+
+        Returns:
+            bool: True if the LayerStore was actually changed.
+
+        Complexity:
+            - Time:
+                - Best Case: O(1), when the layer to be removed is at the front of the queue.
+                - Worst Case: O(n), when the layer to be removed is at the end of the queue or not in the queue at all,
+                  and all layers need to be dequeued and re-enqueued.
         """
         # Dequeue the first layer
         self.layers.serve()
@@ -158,6 +230,9 @@ class AdditiveLayerStore(LayerStore):
     def special(self):
         """
         Special mode. Different for each store implementation.
+        Best case time complexity: O(1)
+        Worst case time complexity: O(n)
+        where n is the number of layers in the queue.
         """
         # Create a new stack with a maximum capacity of 2000
         STACK = stack_adt.ArrayStack(2000)
@@ -191,6 +266,24 @@ class SequenceLayerStore(LayerStore):
     """
 
     def __init__(self) -> None:
+        """
+        Initializes a LayerStore object with an ArraySortedList to store the layers
+        and adds a ListItem for each layer with a value of False (layer is not applied).
+
+        Args:
+            None
+
+        Returns:
+            None
+
+        Complexity:
+            Best Case: O(1)
+                When the length of get_layers() is 0, the for loop is not executed and the time complexity is constant.
+            Worst Case: O(n)
+                When the length of get_layers() is maximum and all elements need to be processed by the for loop,
+                the time complexity is linear with respect to the length of get_layers().
+    
+         """
         # Initialize an ArraySortedList to store the layers.
         self.array_sorted_list = ArraySortedList(len(get_layers())*100)
 
@@ -206,6 +299,17 @@ class SequenceLayerStore(LayerStore):
         """
         Add element layer to the store.
         Returns true if the LayerStore was actually changed.
+        Args:
+         - layer: a Layer object representing the layer to be added.
+    
+        Returns:
+        - A boolean indicating whether the LayerStore was actually changed.
+        
+        Best case time complexity: O(log n), where n is the number of elements in the ArraySortedList.
+        Worst case time complexity: O(n), where n is the number of elements in the ArraySortedList.
+        The complexity is determined by the `add` method of the ArraySortedList class,
+        which performs binary search to find the correct position to insert the new item. In the worst case scenario,
+        the binary search will have to go through all n elements in the list before inserting the new item at the end.
         """
         # Remove the current ListItem for the layer's index.
         self.array_sorted_list.delete_at_index(layer.index)
@@ -223,6 +327,19 @@ class SequenceLayerStore(LayerStore):
         Returns the color this square should show, given the current layers.
 
         start = RGB
+        
+        Args:
+        - start: a tuple of three integers representing the starting RGB color value of the square
+        - timestamp: a float representing the current timestamp
+        - x: an integer representing the x-coordinate of the square
+        - y: an integer representing the y-coordinate of the square
+
+        Returns:
+        - a tuple of three integers representing the final RGB color value of the square after applying all applicable layers
+
+        Complexity:
+        - Worst case time complexity: O(n) where n is the number of layers in the ArraySortedList.
+        - Best case time complexity: O(1) if there are no layers applied.
         """
         # Set the color to the starting RGB value.
         color = start
@@ -241,6 +358,14 @@ class SequenceLayerStore(LayerStore):
         """
         Complete the erase action with this layer
         Returns true if the LayerStore was actually changed.
+        Arguments:
+
+            layer: an instance of the Layer class representing the layer to be removed.
+        Return:
+
+            A boolean value indicating whether the LayerStore was actually changed or not.
+        Best case: O(1) if the layer to be erased is at the beginning of the ArraySortedList.
+        Worst case: O(N) if the layer to be erased is at the end of the ArraySortedList, where N is the number of layers in the LayerStore.
         """
         # Create a new ListItem for the layer with a value of False (layer is not applied).
         item_list = ListItem(False, layer.index)
@@ -253,6 +378,13 @@ class SequenceLayerStore(LayerStore):
     def special(self):
         """
         Special mode. Different for each store implementation.
+        Special mode. Reorders the layer store to prioritize the median layer alphabetically.
+        This function takes no arguments and returns nothing.
+
+        Best case time complexity: O(n), where n is the number of layers in the layer store.
+        Worst case time complexity: O(n^2), where n is the number of layers in the layer store.
+        This is because of the time complexity of adding elements to the lexi_sorted_layers
+        array, which can be O(n^2) if all elements need to be compared.
         """
 
         # Create a new ArraySortedList to store the layers in lexicographically sorted order.
